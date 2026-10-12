@@ -23,28 +23,39 @@ A fun, kid-friendly Sudoku game built with **Three.js** as a **Progressive Web A
 
 ## 🚀 Getting Started
 
-No build step required! Just open in a browser:
+### Prerequisites
 
-### Option 1 – Direct open
-```
-open index.html
-```
-> ⚠️ Some browsers restrict ES modules from `file://`. Use a local server for best results.
+- **Node.js** ≥ 18 and **npm** ≥ 9
 
-### Option 2 – Local HTTP server (recommended)
+### Install dependencies
+
 ```bash
-# Python 3
-python3 -m http.server 8080
-
-# Node.js (npx)
-npx serve .
-
-# Then open
-open http://localhost:8080
+npm install
 ```
 
-### Option 3 – VS Code Live Server
-Install the **Live Server** extension and click "Go Live".
+### Development server
+
+```bash
+npm run dev
+```
+
+Opens the app at `http://localhost:5173` with **Hot Module Replacement (HMR)**.
+
+### Production build
+
+```bash
+npm run build
+```
+
+Outputs optimised, hashed assets to `dist/`.
+
+### Preview production build locally
+
+```bash
+npm run preview
+```
+
+Serves the `dist/` folder at `http://localhost:4173` — identical to what you'd deploy.
 
 ---
 
@@ -53,8 +64,13 @@ Install the **Live Server** extension and click "Go Live".
 ```
 vibe-kid-sudoku-games/
 ├── index.html               ← Main HTML, PWA meta tags, overlay screens
-├── manifest.json            ← PWA manifest
-├── sw.js                    ← Service Worker (cache-first, offline support)
+├── vite.config.js           ← Vite bundler configuration
+├── package.json             ← npm scripts & dependencies
+├── public/                  ← Static assets copied as-is to dist/
+│   ├── manifest.json        ← PWA manifest
+│   ├── sw.js                ← Service Worker (cache-first, offline support)
+│   └── icons/
+│       └── icon.svg         ← App icon (SVG, all PWA sizes)
 ├── src/
 │   ├── main.js              ← Three.js renderer + app bootstrap
 │   ├── sudoku.js            ← Puzzle generation, solver, validator
@@ -62,8 +78,6 @@ vibe-kid-sudoku-games/
 │   ├── ui.js                ← DOM UI controller, screens, HUD
 │   └── sounds.js            ← Web Audio API sound effects
 ├── assets/
-│   ├── icons/
-│   │   └── icon.svg         ← App icon (SVG, all PWA sizes)
 │   └── styles/
 │       └── main.css         ← Styles, animations, responsive design
 └── README.md
@@ -94,7 +108,8 @@ vibe-kid-sudoku-games/
 
 | Technology | Purpose |
 |------------|---------|
-| **Three.js r128** | 3D rendering, cells, particles, animations |
+| **Three.js** | 3D rendering, cells, particles, animations |
+| **Vite 8** | Dev server, bundler, HMR |
 | **Web Audio API** | Synthesized sound effects |
 | **Service Worker** | Offline caching (PWA) |
 | **localStorage** | Game save & high scores |
@@ -149,4 +164,4 @@ score = base_difficulty - (seconds × 2) - (mistakes × 50)
 
 ## 🌟 Credits
 
-Built with ❤️ using Three.js, pure vanilla JavaScript, and lots of kid-tested fun.
+Built with ❤️ using Three.js, Vite, pure vanilla JavaScript, and lots of kid-tested fun.
