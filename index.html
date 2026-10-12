@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#FF6B6B" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Kid Sudoku" />
+  <meta name="description" content="Fun Sudoku game for kids!" />
+  <title>Kid Sudoku 🎉</title>
+
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon.svg" />
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="assets/styles/main.css" />
+</head>
+<body>
+  <!-- Three.js canvas -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- ── MENU SCREEN ── -->
+  <div id="menu-screen" class="overlay screen active">
+    <div class="menu-container">
+      <div class="logo">
+        <span class="logo-emoji">🔢</span>
+        <h1 class="logo-title">Kid Sudoku</h1>
+        <p class="logo-sub">Think. Play. Win! 🌟</p>
+      </div>
+
+      <div class="difficulty-section">
+        <h2>Choose Difficulty</h2>
+        <div class="difficulty-buttons">
+          <button class="diff-btn easy-btn" data-difficulty="easy">
+            <span class="diff-emoji">😊</span>
+            <span class="diff-label">Easy</span>
+            <span class="diff-desc">36 clues</span>
+          </button>
+          <button class="diff-btn medium-btn" data-difficulty="medium">
+            <span class="diff-emoji">🤔</span>
+            <span class="diff-label">Medium</span>
+            <span class="diff-desc">27 clues</span>
+          </button>
+          <button class="diff-btn hard-btn" data-difficulty="hard">
+            <span class="diff-emoji">🔥</span>
+            <span class="diff-label">Hard</span>
+            <span class="diff-desc">22 clues</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="highscores-section">
+        <h2>🏆 High Scores</h2>
+        <div id="highscores-list" class="highscores-list">
+          <div class="score-row"><span class="score-diff">Easy</span><span id="hs-easy" class="score-val">—</span></div>
+          <div class="score-row"><span class="score-diff">Medium</span><span id="hs-medium" class="score-val">—</span></div>
+          <div class="score-row"><span class="score-diff">Hard</span><span id="hs-hard" class="score-val">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GAME SCREEN ── -->
+  <div id="game-screen" class="overlay screen">
+    <!-- HUD top bar -->
+    <div id="hud" class="hud">
+      <div class="hud-left">
+        <button id="btn-menu" class="icon-btn" title="Menu">🏠</button>
+        <button id="btn-pause" class="icon-btn" title="Pause">⏸️</button>
+      </div>
+      <div class="hud-center">
+        <div class="hud-timer">
+          <span>⏱️</span>
+          <span id="timer-display">00:00</span>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div id="hearts-display" class="hearts">❤️❤️❤️</div>
+        <div class="hud-score">
+          <span>⭐</span>
+          <span id="score-display">0</span>
+        </div>
+        <button id="btn-mute" class="icon-btn" title="Mute">🔊</button>
+      </div>
+    </div>
+
+    <!-- Number pad -->
+    <div id="numpad" class="numpad">
+      <div class="numpad-grid">
+        <button class="num-btn" data-num="1">1</button>
+        <button class="num-btn" data-num="2">2</button>
+        <button class="num-btn" data-num="3">3</button>
+        <button class="num-btn" data-num="4">4</button>
+        <button class="num-btn" data-num="5">5</button>
+        <button class="num-btn" data-num="6">6</button>
+        <button class="num-btn" data-num="7">7</button>
+        <button class="num-btn" data-num="8">8</button>
+        <button class="num-btn" data-num="9">9</button>
+        <button class="num-btn erase-btn" data-num="0">⌫</button>
+        <button id="btn-hint" class="num-btn hint-btn" title="Use a hint">💡<span id="hints-remaining">3</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAUSE SCREEN ── -->
+  <div id="pause-screen" class="overlay screen">
+    <div class="modal-card">
+      <div class="modal-emoji">⏸️</div>
+      <h2>Paused</h2>
+      <div class="modal-buttons">
+        <button id="btn-resume" class="modal-btn primary-btn">▶️ Resume</button>
+        <button id="btn-quit" class="modal-btn secondary-btn">🏠 Quit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── WIN SCREEN ── -->
+  <div id="win-screen" class="overlay screen">
+    <div class="confetti-container" id="confetti-container"></div>
+    <div class="modal-card win-card">
+      <div class="modal-emoji bounce">🎉</div>
+      <h2>You Won!</h2>
+      <div class="win-stats">
+        <div class="stat-row">
+          <span>⏱️ Time</span><span id="win-time">—</span>
+        </div>
+        <div class="stat-row">
+          <span>❤️ Mistakes</span><span id="win-mistakes">—</span>
+        </div>
+        <div class="stat-row">
+          <span>⭐ Score</span><span id="win-score">—</span>
+        </div>
+        <div class="stat-row" id="new-record-row" style="display:none;">
+          <span>🏆 New Record!</span><span>🎊</span>
+        </div>
+      </div>
+      <div class="modal-buttons">
+        <button id="btn-play-again" class="modal-btn primary-btn">🔄 Play Again</button>
+        <button id="btn-menu-from-win" class="modal-btn secondary-btn">🏠 Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GAME OVER SCREEN ── -->
+  <div id="gameover-screen" class="overlay screen">
+    <div class="modal-card gameover-card">
+      <div class="modal-emoji shake">💔</div>
+      <h2>Oh No!</h2>
+      <p class="gameover-msg">Too many mistakes!<br>Don't worry, try again! 💪</p>
+      <div class="modal-buttons">
+        <button id="btn-try-again" class="modal-btn primary-btn">🔄 Try Again</button>
+        <button id="btn-menu-from-over" class="modal-btn secondary-btn">🏠 Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Three.js is bundled by Vite from npm -->
+
+  <!-- Service Worker registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('SW registered:', reg.scope))
+          .catch(err => console.warn('SW registration failed:', err));
+      });
+    }
+  </script>
+
+  <!-- Main app entry point -->
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

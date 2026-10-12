@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#6C5CE7"/>
+      <stop offset="50%"  stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#FF6B6B"/>
+    </linearGradient>
+    <linearGradient id="gridGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#1a1a2e" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#16213e" stop-opacity="0.85"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect width="512" height="512" rx="96" ry="96" fill="url(#bgGrad)"/>
+
+  <!-- Decorative stars -->
+  <text x="56"  y="90"  font-size="28" opacity="0.6" fill="#FFE66D">★</text>
+  <text x="430" y="80"  font-size="22" opacity="0.5" fill="#4ECDC4">★</text>
+  <text x="60"  y="440" font-size="20" opacity="0.5" fill="#4ECDC4">✦</text>
+  <text x="440" y="450" font-size="24" opacity="0.6" fill="#FFE66D">✦</text>
+
+  <!-- 3×3 grid panel -->
+  <rect x="104" y="104" width="304" height="304" rx="20" fill="url(#gridGrad)" filter="url(#shadow)"/>
+
+  <!-- Grid cell backgrounds (9 cells) -->
+  <!-- Row 1 -->
+  <rect x="114" y="114" width="88" height="88" rx="10" fill="#0f3460" opacity="0.9"/>
+  <rect x="212" y="114" width="88" height="88" rx="10" fill="#0f3460" opacity="0.9"/>
+  <rect x="310" y="114" width="88" height="88" rx="10" fill="#0f3460" opacity="0.9"/>
+  <!-- Row 2 -->
+  <rect x="114" y="212" width="88" height="88" rx="10" fill="#0f3460" opacity="0.9"/>
+  <rect x="212" y="212" width="88" height="88" rx="10" fill="#FFD700" opacity="0.85"/>
+  <rect x="310" y="212" width="88" height="88" rx="10" fill="#0f3460" opacity="0.9"/>
+  <!-- Row 3 -->
+  <rect x="114" y="310" width="88" height="88" rx="10" fill="#0f3460" opacity="0.9"/>
+  <rect x="212" y="310" width="88" height="88" rx="10" fill="#0f3460" opacity="0.9"/>
+  <rect x="310" y="310" width="88" height="88" rx="10" fill="#0f3460" opacity="0.9"/>
+
+  <!-- Grid dividers -->
+  <rect x="104" y="202" width="304" height="6" rx="3" fill="#4ECDC4" opacity="0.7"/>
+  <rect x="104" y="300" width="304" height="6" rx="3" fill="#4ECDC4" opacity="0.7"/>
+  <rect x="202" y="104" width="6" height="304" rx="3" fill="#4ECDC4" opacity="0.7"/>
+  <rect x="300" y="104" width="6" height="304" rx="3" fill="#4ECDC4" opacity="0.7"/>
+
+  <!-- Numbers in cells -->
+  <!-- Row 1 -->
+  <text x="158" y="175" text-anchor="middle" dominant-baseline="middle"
+        font-family="'Comic Sans MS', cursive" font-size="52" font-weight="bold"
+        fill="#ECF0F1" filter="url(#glow)">5</text>
+
+  <text x="256" y="175" text-anchor="middle" dominant-baseline="middle"
+        font-family="'Comic Sans MS', cursive" font-size="52" font-weight="bold"
+        fill="#ECF0F1" filter="url(#glow)">3</text>
+
+  <text x="354" y="175" text-anchor="middle" dominant-baseline="middle"
+        font-family="'Comic Sans MS', cursive" font-size="52" font-weight="bold"
+        fill="#FF6B6B" filter="url(#glow)">7</text>
+
+  <!-- Row 2 -->
+  <text x="158" y="273" text-anchor="middle" dominant-baseline="middle"
+        font-family="'Comic Sans MS', cursive" font-size="52" font-weight="bold"
+        fill="#4ECDC4" filter="url(#glow)">6</text>
+
+  <text x="256" y="273" text-anchor="middle" dominant-baseline="middle"
+        font-family="'Comic Sans MS', cursive" font-size="52" font-weight="bold"
+        fill="#1a1a2e" filter="url(#glow)">9</text>
+
+  <text x="354" y="273" text-anchor="middle" dominant-baseline="middle"
+        font-family="'Comic Sans MS', cursive" font-size="52" font-weight="bold"
+        fill="#FFE66D" filter="url(#glow)">1</text>
+
+  <!-- Row 3 -->
+  <text x="158" y="370" text-anchor="middle" dominant-baseline="middle"
+        font-family="'Comic Sans MS', cursive" font-size="52" font-weight="bold"
+        fill="#ECF0F1" filter="url(#glow)">8</text>
+
+  <text x="256" y="370" text-anchor="middle" dominant-baseline="middle"
+        font-family="'Comic Sans MS', cursive" font-size="52" font-weight="bold"
+        fill="#a29bfe" filter="url(#glow)">5</text>
+
+  <text x="354" y="370" text-anchor="middle" dominant-baseline="middle"
+        font-family="'Comic Sans MS', cursive" font-size="52" font-weight="bold"
+        fill="#ECF0F1" filter="url(#glow)">2</text>
+
+  <!-- Outer border frame -->
+  <rect x="104" y="104" width="304" height="304" rx="20" fill="none"
+        stroke="#e94560" stroke-width="5" opacity="0.8"/>
+
+  <!-- Title text below grid -->
+  <text x="256" y="464" text-anchor="middle"
+        font-family="'Comic Sans MS', cursive" font-size="38" font-weight="bold"
+        fill="white" opacity="0.95"
+        style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5)">Sudoku!</text>
+</svg>
