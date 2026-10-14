@@ -36,7 +36,7 @@
             <span class="diff-label">Easy</span>
             <span class="diff-desc">36 clues</span>
           </button>
-          <button class="diff-btn medium-btn" data-difficulty="medium">
+          <button class="diff-btn medium-btn selected-diff" data-difficulty="medium">
             <span class="diff-emoji">🤔</span>
             <span class="diff-label">Medium</span>
             <span class="diff-desc">27 clues</span>
@@ -46,6 +46,14 @@
             <span class="diff-label">Hard</span>
             <span class="diff-desc">22 clues</span>
           </button>
+        </div>
+        <button id="btn-start" class="start-btn">▶ Start Game</button>
+      </div>
+
+      <div class="theme-section">
+        <h2>🎨 Theme</h2>
+        <div id="theme-buttons" class="theme-buttons">
+          <!-- populated by ThemeManager -->
         </div>
       </div>
 
@@ -81,6 +89,12 @@
           <span id="score-display">0</span>
         </div>
         <button id="btn-mute" class="icon-btn" title="Mute">🔊</button>
+        <button id="btn-theme" class="icon-btn" title="Change Theme">🎨</button>
+      </div>
+
+      <!-- Theme dropdown — must be inside .hud so position:absolute top:100% anchors here -->
+      <div id="theme-dropdown" class="theme-dropdown" hidden>
+        <div id="hud-theme-buttons" class="hud-theme-buttons"></div>
       </div>
     </div>
 

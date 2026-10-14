@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { GameState }     from './game.js';
 import { UIController }  from './ui.js';
 import { SoundManager }  from './sounds.js';
+import { ThemeManager, THEMES } from './themes.js';
 
 /* ── Constants ─────────────────────────────────────────────────────── */
 
@@ -17,19 +18,22 @@ const CELL_GAP     = 0.06;
 const CELL_HEIGHT  = 0.18;
 const BOARD_OFFSET = -4.0;  // center the 9x9 board
 
-const COLORS = {
-  bg:          0x1a1a2e,
-  boardBase:   0x16213e,
-  cellNormal:  0x0f3460,
-  cellClue:    0x1a1a5e,
-  cellSelected:0xFFD700,
-  cellHover:   0x264f78,
-  cellError:   0xc0392b,
-  cellHinted:  0x8e44ad,
-  cellCorrect: 0x27ae60,
-  gridBorder:  0xe94560,
+// COLORS is mutable — updated when theme changes
+let COLORS = {
+  bg:           0x1a1a2e,
+  boardBase:    0x16213e,
+  cellNormal:   0x0f3460,
+  cellClue:     0x1a1a5e,
+  cellSelected: 0xFFD700,
+  cellRelated:  0x1e4d8c,
+  cellSameNum:  0xf0a500,
+  cellHover:    0x264f78,
+  cellError:    0xc0392b,
+  cellHinted:   0x8e44ad,
+  cellCorrect:  0x27ae60,
+  gridBorder:   0xe94560,
   subgridBorder:0x4ecdc4,
-  particle:    0xffffff,
+  particle:     0xffffff,
 };
 
 /* ── Renderer ──────────────────────────────────────────────────────── */
@@ -63,6 +67,7 @@ class SudokuRenderer {
     this._bindInput();
     this._bindDeviceMotion();
     this._animate();
+    this._particlePalette = null; // set by applyTheme
   }
 
   /* ── Scene setup ─────────────────────────────────────────────────── */
@@ -348,23 +353,41 @@ class SudokuRenderer {
     if (!this.state.puzzle) return;
     const { puzzle, userGrid, errorGrid, hintedCells, selectedCell } = this.state;
 
+    const selRow = selectedCell.row;
+    const selCol = selectedCell.col;
+    const selVal = (selRow >= 0 && selCol >= 0) ? userGrid[selRow][selCol] : 0;
+    const selBoxRow = selRow >= 0 ? Math.floor(selRow / 3) * 3 : -1;
+    const selBoxCol = selCol >= 0 ? Math.floor(selCol / 3) * 3 : -1;
+
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
-        const cell   = this.cellMeshes[r][c];
+        const cell    = this.cellMeshes[r][c];
         const numMesh = this.numberMeshes[r][c];
         if (!cell || !numMesh) continue;
 
-        const isSel   = selectedCell.row === r && selectedCell.col === c;
-        const isClue  = puzzle[r][c] !== 0;
-        const isError = errorGrid[r][c];
-        const isHinted= hintedCells[r][c];
-        const val     = userGrid[r][c];
+        const isSel    = selRow === r && selCol === c;
+        const isClue   = puzzle[r][c] !== 0;
+        const isError  = errorGrid[r][c];
+        const isHinted = hintedCells[r][c];
+        const val      = userGrid[r][c];
 
-        // Cell color
+        // Related: same row, col, or 3×3 box as selected cell
+        const isRelated = selRow >= 0 && !isSel && (
+          r === selRow ||
+          c === selCol ||
+          (Math.floor(r / 3) * 3 === selBoxRow && Math.floor(c / 3) * 3 === selBoxCol)
+        );
+
+        // Same digit as selected (non-zero)
+        const isSameNum = selVal > 0 && val === selVal && !isSel;
+
+        // Cell color — priority: selected > error > hinted > sameNum > related > clue/normal
         let color = isClue ? COLORS.cellClue : COLORS.cellNormal;
-        if (isError)  color = COLORS.cellError;
+        if (isRelated)           color = COLORS.cellRelated;
+        if (isSameNum)           color = COLORS.cellSameNum;
+        if (isError)             color = COLORS.cellError;
         if (isHinted && !isError) color = COLORS.cellHinted;
-        if (isSel)    color = COLORS.cellSelected;
+        if (isSel)               color = COLORS.cellSelected;
 
         cell.material.color.setHex(color);
 
@@ -375,10 +398,10 @@ class SudokuRenderer {
         // Number type
         let numType = 'empty';
         if (val !== 0) {
-          if (isClue)   numType = 'clue';
-          else if (isError) numType = 'error';
+          if (isClue)        numType = 'clue';
+          else if (isError)  numType = 'error';
           else if (isHinted) numType = 'hinted';
-          else           numType = 'user';
+          else               numType = 'user';
         }
         this._drawNumber(numMesh, val, numType);
         // Move number plane with cell
@@ -550,6 +573,34 @@ class SudokuRenderer {
 
     this.renderer.render(this.scene, this.camera);
   }
+  /** Apply a theme's three-color palette to the live scene. */
+  applyTheme(c) {
+    // Update the shared COLORS object
+    Object.assign(COLORS, c);
+
+    // Scene background + fog
+    this.renderer.setClearColor(c.bg);
+    if (this.scene.fog) {
+      this.scene.fog.color.setHex(c.fogColor ?? c.bg);
+      this.scene.fog.density = c.fogDensity ?? 0.04;
+    }
+
+    // Rebuild particle colors
+    if (this.particles && c.particleColors) {
+      const colorAttr = this.particles.geometry.attributes.color;
+      const palette = c.particleColors.map(h => new THREE.Color(h));
+      for (let i = 0; i < this._particleCount; i++) {
+        const col = palette[i % palette.length];
+        colorAttr.array[i*3]   = col.r;
+        colorAttr.array[i*3+1] = col.g;
+        colorAttr.array[i*3+2] = col.b;
+      }
+      colorAttr.needsUpdate = true;
+    }
+
+    // Refresh the board with new colors
+    this.updateBoard();
+  }
 }
 
 /* ── App bootstrap ──────────────────────────────────────────────────── */
@@ -557,9 +608,81 @@ class SudokuRenderer {
 const gameState  = new GameState();
 const sounds     = new SoundManager();
 const ui         = new UIController(gameState, sounds);
+const themeManager = new ThemeManager();
 
 // Create renderer after DOM is ready
 const renderer   = new SudokuRenderer(gameState, ui, sounds);
+
+// Apply saved theme to 3D scene immediately
+renderer.applyTheme(themeManager.getThreeColors());
+
+// ── Theme button builder (shared for menu + HUD) ──────────────────────
+function buildThemeButtons(container, btnClass, swatchClass, onApply) {
+  themeManager.getAll().forEach(({ key, label }) => {
+    const btn = document.createElement('button');
+    btn.className = btnClass + (key === themeManager.current ? ' active-theme' : '');
+    btn.dataset.theme = key;
+
+    const swatch = document.createElement('span');
+    swatch.className = swatchClass;
+    const hex = '#' + THEMES[key].three.cellSelected.toString(16).padStart(6, '0');
+    swatch.style.background = hex;
+
+    const txt = document.createElement('span');
+    txt.textContent = label;
+
+    btn.appendChild(swatch);
+    btn.appendChild(txt);
+
+    btn.addEventListener('click', () => {
+      sounds.playClick();
+      const threeColors = themeManager.apply(key);
+      renderer.applyTheme(threeColors);
+      // Sync active state across ALL theme buttons on the page
+      document.querySelectorAll('.theme-btn, .hud-theme-btn')
+        .forEach(b => b.classList.remove('active-theme'));
+      document.querySelectorAll(`[data-theme="${key}"]`)
+        .forEach(b => b.classList.add('active-theme'));
+      if (onApply) onApply();
+    });
+
+    container.appendChild(btn);
+  });
+}
+
+// Menu picker
+(function () {
+  const container = document.getElementById('theme-buttons');
+  if (container) buildThemeButtons(container, 'theme-btn', 'theme-swatch', null);
+}());
+
+// HUD dropdown
+(function () {
+  const hudContainer = document.getElementById('hud-theme-buttons');
+  const dropdown     = document.getElementById('theme-dropdown');
+  const btnTheme     = document.getElementById('btn-theme');
+  if (!hudContainer || !dropdown || !btnTheme) return;
+
+  buildThemeButtons(hudContainer, 'hud-theme-btn', 'hud-theme-swatch', () => {
+    dropdown.hidden = true;
+    btnTheme.classList.remove('active-btn');
+  });
+
+  btnTheme.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sounds.playClick();
+    const isOpen = !dropdown.hidden;
+    dropdown.hidden = isOpen;
+    btnTheme.classList.toggle('active-btn', !isOpen);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!dropdown.hidden && !dropdown.contains(e.target) && e.target !== btnTheme) {
+      dropdown.hidden = true;
+      btnTheme.classList.remove('active-btn');
+    }
+  });
+}());
 
 /* ── Wire up GameState events ─────────────────────────────────────── */
 
