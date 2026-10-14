@@ -98,26 +98,37 @@ class SudokuRenderer {
     window.addEventListener('resize', () => this._resize());
   }
 
+  /** Vertical space not covered by the HUD and number pad. */
+  _measureLayout() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const hudRect = document.getElementById('hud')?.getBoundingClientRect();
+    const padRect = document.getElementById('numpad')?.getBoundingClientRect();
+    const visible = hudRect && padRect && padRect.height > 0;
+    const freeTop    = visible ? hudRect.bottom : 0;
+    const freeBottom = visible ? padRect.top : h;
+    return { freeTop, freeBottom, key: `${w}x${h}:${freeTop}:${freeBottom}` };
+  }
+
   _resize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
     this.renderer.setSize(w, h);
 
-    const aspect = w / h;
     const boardW = 9 * (CELL_SIZE + CELL_GAP) + 0.5;
-    const half   = boardW / 2 + 0.5;
+    const extent = boardW + 1;
 
-    if (aspect >= 1) {
-      this.camera.left   = -half * aspect;
-      this.camera.right  =  half * aspect;
-      this.camera.top    =  half;
-      this.camera.bottom = -half;
-    } else {
-      this.camera.left   = -half;
-      this.camera.right  =  half;
-      this.camera.top    =  half / aspect;
-      this.camera.bottom = -half / aspect;
-    }
+    // Fit the board into the space between the HUD and the number pad
+    const { key, freeTop, freeBottom } = this._measureLayout();
+    const freeH = Math.max(freeBottom - freeTop, 1);
+    this._layoutKey = key;
+
+    const s  = Math.max(extent / w, extent / freeH);
+    const cy = (freeTop + freeBottom) / 2;
+    this.camera.left   = -w * s / 2;
+    this.camera.right  =  w * s / 2;
+    this.camera.top    =  cy * s;
+    this.camera.bottom = -(h - cy) * s;
     this.camera.updateProjectionMatrix();
   }
 
@@ -571,6 +582,7 @@ class SudokuRenderer {
       this.camera.lookAt(0, 0, 0);
     }
 
+    if (this._layoutKey !== this._measureLayout().key) this._resize();
     this.renderer.render(this.scene, this.camera);
   }
   /** Apply a theme's three-color palette to the live scene. */
