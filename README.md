@@ -18,6 +18,8 @@ A fun, kid-friendly Sudoku game built with **Three.js** as a **Progressive Web A
 - 💾 **Auto-save** – resumes your game on next visit
 - 📱 **PWA / Offline** – service worker caches all assets after first load
 - 🌐 **Responsive** – works on phones, tablets, and desktops
+- ⌨️ **Full keyboard navigation** – move between cells with Arrow keys or WASD
+- 🔦 **Smart cell highlighting** – selected cell, same row/col/box, and matching digits are all highlighted
 
 ---
 
@@ -75,7 +77,7 @@ vibe-kid-sudoku-games/
 │   ├── main.js              ← Three.js renderer + app bootstrap
 │   ├── sudoku.js            ← Puzzle generation, solver, validator
 │   ├── game.js              ← Game state, timer, scoring, persistence
-│   ├── ui.js                ← DOM UI controller, screens, HUD
+│   ├── ui.js                ← DOM UI controller, screens, HUD, keyboard input
 │   └── sounds.js            ← Web Audio API sound effects
 ├── assets/
 │   └── styles/
@@ -88,19 +90,37 @@ vibe-kid-sudoku-games/
 ## 🎮 How to Play
 
 1. **Choose a difficulty** on the menu screen
-2. **Tap a cell** on the board to select it (it glows gold and rises!)
-3. **Tap a number** on the number pad to fill in the cell
+2. **Click / tap a cell** on the board to select it (it glows gold and rises!)
+3. **Fill in a number** via the on-screen number pad, keyboard digits, or WASD/arrow navigation
 4. **Wrong answer?** You lose a heart ❤️ (3 mistakes = game over)
 5. **Need help?** Tap 💡 to use a hint (3 per game)
 6. **Win!** Complete the board to see your score and confetti 🎊
 
-### Keyboard Shortcuts
+---
+
+## ⌨️ Keyboard Shortcuts
+
 | Key | Action |
 |-----|--------|
-| `1–9` | Place number |
-| `Backspace` / `Delete` / `0` | Erase cell |
-| `H` | Use hint |
+| `1` – `9` | Place number in selected cell |
+| `Backspace` / `Delete` / `0` | Erase selected cell |
+| `↑` `↓` `←` `→` | Move cell selection |
+| `W` `A` `S` `D` | Move cell selection (WASD) |
+| `H` | Use a hint |
 | `Escape` | Pause / Resume |
+
+---
+
+## 🔦 Cell Highlight Guide
+
+| Highlight | Meaning |
+|-----------|---------|
+| 🟡 **Gold** (bright) | Currently selected cell |
+| 🔵 **Light blue** | Same row, column, or 3×3 box as selection |
+| 🟠 **Soft gold** | Other cells containing the same digit |
+| 🔴 **Red** | Wrong number placed |
+| 🟣 **Purple** | Cell filled by hint |
+| 🟢 **Green flash** | Correct number just placed |
 
 ---
 
@@ -143,7 +163,7 @@ score = base_difficulty - (seconds × 2) - (mistakes × 50)
 
 ## 📱 PWA Installation
 
-1. Open the game in Chrome/Edge/Safari on any device
+1. Open the game in Chrome / Edge / Safari on any device
 2. Look for the **"Install App"** or **"Add to Home Screen"** prompt
 3. The game installs and works fully **offline**!
 
@@ -154,6 +174,8 @@ score = base_difficulty - (seconds × 2) - (mistakes × 50)
 - **Dark purple/navy** background (`#1a1a2e`)
 - **Coral red** accents (`#FF6B6B`)
 - **Golden yellow** selected cells (`#FFD700`)
+- **Light blue** row/col/box highlight (`#1e4d8c`)
+- **Soft gold** same-digit highlight (`#f0a500`)
 - **Teal** subgrid borders (`#4ECDC4`)
 - **Comic Sans** / **Chalkboard** font for numbers (kid-friendly)
 - Floating particle stars in the background

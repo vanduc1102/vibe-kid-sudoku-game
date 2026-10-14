@@ -190,14 +190,24 @@ export class UIController {
   }
 
   _bindEvents() {
-    // Difficulty buttons
+    // Difficulty buttons — selection only (no game start)
+    let _selectedDifficulty = 'medium'; // matches the pre-selected HTML class
     document.querySelectorAll('.diff-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         this.sounds.playClick();
-        if (this._callbacks?.onDifficultySelect) {
-          this._callbacks.onDifficultySelect(btn.dataset.difficulty);
-        }
+        _selectedDifficulty = btn.dataset.difficulty;
+        // Update selected highlight
+        document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected-diff'));
+        btn.classList.add('selected-diff');
       });
+    });
+
+    // Start Game button
+    document.getElementById('btn-start').addEventListener('click', () => {
+      this.sounds.playClick();
+      if (this._callbacks?.onDifficultySelect) {
+        this._callbacks.onDifficultySelect(_selectedDifficulty);
+      }
     });
 
     // Number pad
@@ -282,6 +292,30 @@ export class UIController {
         }
       } else if (e.key === 'h' || e.key === 'H') {
         if (this._callbacks?.onHint) this._callbacks.onHint();
+      } else if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','W','a','A','s','S','d','D'].includes(e.key)) {
+        // Arrow / WASD cell navigation
+        if (!this.state.puzzle || this.state.isPaused ||
+            this.state.isComplete || this.state.isOver) return;
+
+        e.preventDefault(); // prevent page scroll
+
+        let { row, col } = this.state.selectedCell;
+        // If nothing selected yet, start at top-left
+        if (row < 0) { row = 0; col = 0; }
+        else {
+          const up    = e.key === 'ArrowUp'    || e.key === 'w' || e.key === 'W';
+          const down  = e.key === 'ArrowDown'  || e.key === 's' || e.key === 'S';
+          const left  = e.key === 'ArrowLeft'  || e.key === 'a' || e.key === 'A';
+          const right = e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D';
+
+          if (up)    row = Math.max(0, row - 1);
+          if (down)  row = Math.min(8, row + 1);
+          if (left)  col = Math.max(0, col - 1);
+          if (right) col = Math.min(8, col + 1);
+        }
+
+        this.sounds.playClick();
+        this.state.selectCell(row, col);
       }
     });
   }
