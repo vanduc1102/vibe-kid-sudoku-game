@@ -77,7 +77,7 @@ export class GameState {
     this.errorGrid  = Array.from({ length: 9 }, () => Array(9).fill(false));
     this.hintedCells= Array.from({ length: 9 }, () => Array(9).fill(false));
 
-    this.selectedCell = { row: -1, col: -1 };
+    this.selectedCell = this._defaultCell();
     this.selectedNum  = 0;
     this.mistakes   = 0;
     this.hints      = MAX_HINTS;
@@ -90,6 +90,21 @@ export class GameState {
     this._startTimer();
     this._save();
     this._emit();
+  }
+
+  /** Top-left cell if empty, otherwise the nearest empty cell to it. */
+  _defaultCell() {
+    let best = { row: 0, col: 0 };
+    let bestDist = Infinity;
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        if (this.userGrid[r][c] === 0 && r + c < bestDist) {
+          best = { row: r, col: c };
+          bestDist = r + c;
+        }
+      }
+    }
+    return best;
   }
 
   /** Select a cell by (row, col). Returns false if cell is a pre-filled clue. */
@@ -224,7 +239,7 @@ export class GameState {
       this.isComplete  = false;
       this.isPaused    = false;
       this.isOver      = false;
-      this.selectedCell= { row: -1, col: -1 };
+      this.selectedCell= this._defaultCell();
 
       this._startTimer();
       this._emit();
