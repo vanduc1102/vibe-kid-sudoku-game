@@ -5,7 +5,6 @@ import { SYMBOL_SETS } from './symbols.js';
 
 const STORAGE_KEY  = 'kid-sudoku-state';
 const SCORES_KEY   = 'kid-sudoku-highscores';
-const MAX_MISTAKES = 3;
 const MAX_HINTS    = 3;
 
 function calcScore(gridKey, difficulty, seconds, mistakes) {
@@ -112,14 +111,6 @@ export class GameState {
       this.errorGrid[row][col] = true;
       this.mistakes++;
       this._emit();
-      if (this.mistakes >= MAX_MISTAKES) {
-        this._stopTimer();
-        this.isOver = true;
-        this._save();
-        this._emit();
-        if (this.onGameOver) this.onGameOver();
-        return 'gameover';
-      }
       this._save();
       if (this.onMistake) this.onMistake(this.mistakes);
       return 'wrong';

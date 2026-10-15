@@ -6,6 +6,7 @@
 'use strict';
 
 import * as THREE from 'three';
+import '@fontsource-variable/nunito';
 import { GameState }     from './game.js';
 import { UIController }  from './ui.js';
 import { SoundManager }  from './sounds.js';
@@ -350,7 +351,7 @@ class SudokuRenderer {
 
     if (this.state.inputMode === 'symbols' && this._drawSymbol(mesh, num, s.color)) return;
 
-    ctx.font = `${s.weight} 80px "Comic Sans MS", "Chalkboard SE", cursive`;
+    ctx.font = `${s.weight} 80px "Nunito Variable", "Roboto", "Arial Rounded MT Bold", sans-serif`;
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
 
@@ -723,6 +724,9 @@ const gameState  = new GameState();
 const sounds     = new SoundManager();
 const ui         = new UIController(gameState, sounds);
 const themeManager = new ThemeManager();
+
+// Preload so canvas number textures use the bundled font
+document.fonts?.load('800 80px "Nunito Variable"');
 
 // Create renderer after DOM is ready
 const renderer   = new SudokuRenderer(gameState, ui, sounds);
