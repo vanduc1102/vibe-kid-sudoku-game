@@ -292,6 +292,31 @@ export class UIController {
         }
       } else if (e.key === 'h' || e.key === 'H') {
         if (this._callbacks?.onHint) this._callbacks.onHint();
+      } else if (e.key === 'Tab') {
+        // Tab / Shift+Tab cell navigation
+        if (!this.state.puzzle || this.state.isPaused ||
+            this.state.isComplete || this.state.isOver) return;
+
+        e.preventDefault();
+
+        let { row, col } = this.state.selectedCell;
+        if (row < 0 || col < 0) {
+          row = 0;
+          col = 0;
+        } else {
+          const totalCells = 81;
+          let index = row * 9 + col;
+          if (e.shiftKey) {
+            index = (index - 1 + totalCells) % totalCells;
+          } else {
+            index = (index + 1) % totalCells;
+          }
+          row = Math.floor(index / 9);
+          col = index % 9;
+        }
+
+        this.sounds.playClick();
+        this.state.selectCell(row, col);
       } else if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','W','a','A','s','S','d','D'].includes(e.key)) {
         // Arrow / WASD cell navigation
         if (!this.state.puzzle || this.state.isPaused ||
