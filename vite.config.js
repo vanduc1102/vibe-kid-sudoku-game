@@ -1,4 +1,7 @@
 import { defineConfig } from 'vite';
+import { readFileSync } from 'node:fs';
+
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'));
 
 // When building for GitHub Pages, GITHUB_REPOSITORY is set to "owner/repo-name".
 // We extract the repo name to use as the Vite base path so all asset URLs are correct.
@@ -6,6 +9,19 @@ const repoName = process.env.GITHUB_REPOSITORY?.split('/')[1];
 const base = repoName ? `/${repoName}/` : '/';
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
+
+  plugins: [
+    {
+      name: 'html-version-transform',
+      transformIndexHtml(html) {
+        return html.replace(/%APP_VERSION%/g, pkg.version);
+      },
+    },
+  ],
+
   // Base public path — '/' locally, '/<repo-name>/' on GitHub Pages
   base,
 

@@ -7,6 +7,7 @@
 
 const CONFETTI_COLORS = ['#FF6B6B','#FFE66D','#4ECDC4','#45B7D1','#96CEB4','#DDA0DD','#FF9F43'];
 const CONFETTI_COUNT  = 80;
+export const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.2';
 
 export class UIController {
   /**
@@ -16,6 +17,11 @@ export class UIController {
   constructor(gameState, soundManager) {
     this.state  = gameState;
     this.sounds = soundManager;
+
+    this.version = APP_VERSION;
+    document.querySelectorAll('.app-version').forEach(el => {
+      el.textContent = APP_VERSION;
+    });
 
     // Screen references
     this.screens = {
