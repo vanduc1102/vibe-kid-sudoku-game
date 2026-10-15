@@ -1,6 +1,6 @@
 {
   "name": "vibe-kid-sudoku-games",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A fun, kid-friendly Sudoku game built with Three.js as a Progressive Web App (PWA). Play offline, enjoy cool 3D visuals, and learn to love Sudoku!",
   "type": "module",
   "scripts": {
