@@ -170,9 +170,34 @@ describe('GameState', () => {
       }
       expect(result).toBe('win');
       expect(game.isComplete).toBe(true);
-      expect(game.score).toBe(500);
-      expect(onComplete).toHaveBeenCalledWith(500);
-      expect(game.getHighScores().easy).toBe(500);
+      expect(game.score).toBe(1000);
+      expect(onComplete).toHaveBeenCalledWith(1000);
+      expect(game.getHighScores().large_easy).toBe(1000);
+    });
+
+    it('keeps a legacy 9x9 high score when the new score is lower', () => {
+      localStorage.setItem('kid-sudoku-highscores', JSON.stringify({ easy: 1500 }));
+      for (const { row, col } of emptyCells(game)) {
+        game.selectCell(row, col);
+        game.placeNumber(game.solution[row][col]);
+      }
+
+      expect(game.isNewRecord()).toBe(false);
+      expect(game.getHighScores().easy).toBe(1500);
+    });
+
+    it('records a win with a zero score as a high score', () => {
+      game.seconds = 10000;
+      const cells = emptyCells(game);
+      for (const { row, col } of cells) {
+        game.selectCell(row, col);
+        game.placeNumber(game.solution[row][col]);
+      }
+
+      expect(game.isComplete).toBe(true);
+      expect(game.score).toBe(0);
+      expect(game.getHighScores().large_easy).toBe(0);
+      expect(game.isNewRecord()).toBe(true);
     });
   });
 
@@ -191,11 +216,80 @@ describe('GameState', () => {
     });
   });
 
+  describe('grid sizes', () => {
+    it.each([
+      ['small', 4],
+      ['medium_m', 5],
+      ['medium_s', 6],
+      ['large', 9]
+    ])('starts a %s grid', (gridKey, size) => {
+      game.startNew('easy', gridKey);
+      expect(game.gridConfig.size).toBe(size);
+      expect(game.puzzle).toHaveLength(size);
+      expect(game.puzzle.every(row => row.length === size)).toBe(true);
+      expect(game.solution).toHaveLength(size);
+      expect(game.solution.every(row => row.length === size)).toBe(true);
+      expect(game.userGrid).toEqual(game.puzzle);
+      expect(game.selectedCell).toMatchObject({ row: expect.any(Number), col: expect.any(Number) });
+      expect(game.puzzle[game.selectedCell.row][game.selectedCell.col]).toBe(0);
+    });
+
+    it('supports symbol mode on 4x4 and 5x5 and keeps larger grids numeric', () => {
+      game.startNew('easy', 'small', 'symbols', 'vehicles');
+      expect(game.inputMode).toBe('symbols');
+      expect(game.symbolSet).toBe('vehicles');
+
+      game.startNew('easy', 'medium_m', 'symbols', 'shapes');
+      expect(game.inputMode).toBe('symbols');
+      expect(game.symbolSet).toBe('shapes');
+
+      game.startNew('easy', 'medium_s', 'symbols', 'gaming');
+      expect(game.inputMode).toBe('numbers');
+      expect(game.symbolSet).toBe('gaming');
+    });
+
+    it('restores the selected symbol set with a saved game', () => {
+      game.startNew('medium', 'small', 'symbols', 'gaming');
+      const restored = new GameState();
+
+      expect(restored.loadSaved()).toBe(true);
+      restored._stopTimer();
+      expect(restored.gridKey).toBe('small');
+      expect(restored.inputMode).toBe('symbols');
+      expect(restored.symbolSet).toBe('gaming');
+    });
+
+    it('stores symbol-mode high scores separately by icon set', () => {
+      game.startNew('easy', 'small', 'symbols', 'vehicles');
+      for (let row = 0; row < game.gridConfig.size; row++) {
+        for (let col = 0; col < game.gridConfig.size; col++) {
+          if (game.puzzle[row][col] === 0) {
+            game.selectCell(row, col);
+            game.placeNumber(game.solution[row][col]);
+          }
+        }
+      }
+
+      expect(game.isComplete).toBe(true);
+      expect(game.getHighScores().small_symbols_vehicles_easy).toBeGreaterThan(0);
+      expect(game.getHighScores().small_easy).toBeUndefined();
+    });
+  });
+
   describe('timer, pause and persistence', () => {
     it('counts seconds and formats them', () => {
       vi.advanceTimersByTime(65000);
       expect(game.seconds).toBe(65);
       expect(game.getTimerString()).toBe('01:05');
+      expect(game.score).toBe(870);
+    });
+
+    it('updates the score immediately for mistakes', () => {
+      const [{ row, col }] = emptyCells(game);
+      game.selectCell(row, col);
+      game.placeNumber(wrongValue(game, row, col));
+
+      expect(game.score).toBe(950);
     });
 
     it('stops counting while paused and resumes afterwards', () => {

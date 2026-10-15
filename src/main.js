@@ -10,13 +10,13 @@ import { GameState }     from './game.js';
 import { UIController }  from './ui.js';
 import { SoundManager }  from './sounds.js';
 import { ThemeManager, THEMES } from './themes.js';
+import { getSymbol, getSymbolSvg } from './symbols.js';
 
 /* ── Constants ─────────────────────────────────────────────────────── */
 
 const CELL_SIZE    = 1.0;   // world units
 const CELL_GAP     = 0.06;
 const CELL_HEIGHT  = 0.18;
-const BOARD_OFFSET = -4.0;  // center the 9x9 board
 
 // COLORS is mutable — updated when theme changes
 let COLORS = {
@@ -47,6 +47,7 @@ class SudokuRenderer {
     this.canvas  = document.getElementById('game-canvas');
     this.cellMeshes   = [];  // [row][col] → THREE.Mesh (box)
     this.numberMeshes = [];  // [row][col] → THREE.Mesh (plane with texture)
+    this._symbolImages = new Map();
     this.particles    = null;
     this.boardGroup   = null;
 
@@ -115,7 +116,7 @@ class SudokuRenderer {
     const h = window.innerHeight;
     this.renderer.setSize(w, h);
 
-    const boardW = 9 * (CELL_SIZE + CELL_GAP) + 0.5;
+    const boardW = this.state.gridConfig.size * (CELL_SIZE + CELL_GAP) + 0.5;
     const extent = boardW + 1;
 
     // Fit the board into the space between the HUD and the number pad
@@ -199,17 +200,22 @@ class SudokuRenderer {
   /* ── Board creation ─────────────────────────────────────────────── */
 
   _createBoard() {
+    this._winAnim = false;
+    this._winStart = 0;
+    this._correctFlash = [];
+
     // Remove old board
     if (this.boardGroup) {
       this.scene.remove(this.boardGroup);
     }
 
     this.boardGroup   = new THREE.Group();
-    this.cellMeshes   = Array.from({length:9}, () => Array(9).fill(null));
-    this.numberMeshes = Array.from({length:9}, () => Array(9).fill(null));
+    const { size, boxRows, colsPerCol } = this.state.gridConfig;
+    this.cellMeshes   = Array.from({ length: size }, () => Array(size).fill(null));
+    this.numberMeshes = Array.from({ length: size }, () => Array(size).fill(null));
 
     const step = CELL_SIZE + CELL_GAP;
-    const totalSize = step * 9;
+    const totalSize = step * size;
     const start = -totalSize / 2 + step / 2;
 
     // Board base
@@ -220,12 +226,11 @@ class SudokuRenderer {
     base.receiveShadow = true;
     this.boardGroup.add(base);
 
-    // Subgrid separators (3x3 thick lines)
-    this._createSubgridBorders(start, step, totalSize);
+    this._createSubgridBorders(start, step, totalSize, size, boxRows, colsPerCol);
 
     // Cells
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
         const x = start + c * step;
         const z = start + r * step;
 
@@ -254,6 +259,7 @@ class SudokuRenderer {
     this._createOuterFrame(totalSize);
 
     // Settle animation: board starts high and drops
+    this.boardGroup.rotation.set(0, 0, 0);
     this.boardGroup.position.y = 8;
     this._wobbleDone = false;
     this._wobbleStart = this._clock.getElapsedTime();
@@ -261,19 +267,18 @@ class SudokuRenderer {
     this.scene.add(this.boardGroup);
   }
 
-  _createSubgridBorders(start, step, totalSize) {
+  _createSubgridBorders(start, step, totalSize, size, boxRows, colsPerCol) {
+    if (!boxRows || !colsPerCol) return;
     const borderMat = new THREE.MeshLambertMaterial({ color: COLORS.subgridBorder });
 
-    // Vertical separators at x positions for cols 3 and 6
-    for (const ci of [3, 6]) {
+    for (let ci = colsPerCol; ci < size; ci += colsPerCol) {
       const x = start + ci * step - step / 2 - CELL_GAP / 2;
       const geom = new THREE.BoxGeometry(0.08, CELL_HEIGHT + 0.02, totalSize + 0.2);
       const mesh = new THREE.Mesh(geom, borderMat);
       mesh.position.set(x, 0, 0);
       this.boardGroup.add(mesh);
     }
-    // Horizontal separators at z positions for rows 3 and 6
-    for (const ri of [3, 6]) {
+    for (let ri = boxRows; ri < size; ri += boxRows) {
       const z = start + ri * step - step / 2 - CELL_GAP / 2;
       const geom = new THREE.BoxGeometry(totalSize + 0.2, CELL_HEIGHT + 0.02, 0.08);
       const mesh = new THREE.Mesh(geom, borderMat);
@@ -343,6 +348,8 @@ class SudokuRenderer {
     };
     const s = styles[type] || styles.user;
 
+    if (this.state.inputMode === 'symbols' && this._drawSymbol(mesh, num, s.color)) return;
+
     ctx.font = `${s.weight} 80px "Comic Sans MS", "Chalkboard SE", cursive`;
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
@@ -358,6 +365,27 @@ class SudokuRenderer {
     texture.needsUpdate = true;
   }
 
+  _drawSymbol(mesh, value, color) {
+    const symbol = getSymbol(this.state.symbolSet, value);
+    if (!symbol) return false;
+
+    const { canvas, texture } = mesh.userData;
+    let image = this._symbolImages.get(`${this.state.symbolSet}-${symbol.name}-${color}`);
+    if (!image) {
+      image = new Image();
+      this._symbolImages.set(`${this.state.symbolSet}-${symbol.name}-${color}`, image);
+      image.onload = () => this.updateBoard();
+      image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(getSymbolSvg(symbol, color))}`;
+    }
+    if (!image.complete || !image.naturalWidth) return true;
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 22, 22, canvas.width - 44, canvas.height - 44);
+    texture.needsUpdate = true;
+    return true;
+  }
+
   /* ── Board update (called by GameState.onChange) ─────────────────── */
 
   updateBoard() {
@@ -367,13 +395,15 @@ class SudokuRenderer {
     const selRow = selectedCell.row;
     const selCol = selectedCell.col;
     const selVal = (selRow >= 0 && selCol >= 0) ? userGrid[selRow][selCol] : 0;
-    const selBoxRow = selRow >= 0 ? Math.floor(selRow / 3) * 3 : -1;
-    const selBoxCol = selCol >= 0 ? Math.floor(selCol / 3) * 3 : -1;
+    const { size, boxRows, colsPerCol } = this.state.gridConfig;
+    if (this.cellMeshes.length !== size || this.numberMeshes.length !== size) return;
+    const selBoxRow = selRow >= 0 && boxRows ? Math.floor(selRow / boxRows) * boxRows : -1;
+    const selBoxCol = selCol >= 0 && colsPerCol ? Math.floor(selCol / colsPerCol) * colsPerCol : -1;
 
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        const cell    = this.cellMeshes[r][c];
-        const numMesh = this.numberMeshes[r][c];
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        const cell    = this.cellMeshes[r]?.[c];
+        const numMesh = this.numberMeshes[r]?.[c];
         if (!cell || !numMesh) continue;
 
         const isSel    = selRow === r && selCol === c;
@@ -382,11 +412,13 @@ class SudokuRenderer {
         const isHinted = hintedCells[r][c];
         const val      = userGrid[r][c];
 
-        // Related: same row, col, or 3×3 box as selected cell
+        // Related: same row, column, or box where this grid has boxes
         const isRelated = selRow >= 0 && !isSel && (
           r === selRow ||
           c === selCol ||
-          (Math.floor(r / 3) * 3 === selBoxRow && Math.floor(c / 3) * 3 === selBoxCol)
+          (boxRows > 0 && colsPerCol > 0 &&
+            Math.floor(r / boxRows) * boxRows === selBoxRow &&
+            Math.floor(c / colsPerCol) * colsPerCol === selBoxCol)
         );
 
         // Same digit as selected (non-zero)
@@ -440,8 +472,8 @@ class SudokuRenderer {
   _getCellTargets() {
     const targets = [];
     if (this.cellMeshes) {
-      for (let r = 0; r < 9; r++) {
-        for (let c = 0; c < 9; c++) {
+      for (let r = 0; r < this.cellMeshes.length; r++) {
+        for (let c = 0; c < this.cellMeshes[r].length; c++) {
           if (this.cellMeshes[r]?.[c]) targets.push(this.cellMeshes[r][c]);
           if (this.numberMeshes[r]?.[c]) targets.push(this.numberMeshes[r][c]);
         }
@@ -609,8 +641,8 @@ class SudokuRenderer {
 
       // Selected cell pulse & unselected scale reset
       const { row: selR, col: selC } = this.state.selectedCell;
-      for (let r = 0; r < 9; r++) {
-        for (let c = 0; c < 9; c++) {
+      for (let r = 0; r < this.cellMeshes.length; r++) {
+        for (let c = 0; c < this.cellMeshes[r].length; c++) {
           const cell = this.cellMeshes[r]?.[c];
           if (!cell) continue;
           if (r === selR && c === selC) {
@@ -623,8 +655,8 @@ class SudokuRenderer {
       }
 
       // Smooth cell Y movement
-      for (let r = 0; r < 9; r++) {
-        for (let c = 0; c < 9; c++) {
+      for (let r = 0; r < this.cellMeshes.length; r++) {
+        for (let c = 0; c < this.cellMeshes[r].length; c++) {
           const cell = this.cellMeshes[r]?.[c];
           if (!cell) continue;
           const target = cell.userData.targetY ?? 0;
@@ -794,12 +826,13 @@ gameState.onMistake = () => {
 /* ── UI Callbacks ─────────────────────────────────────────────────── */
 
 ui.registerCallbacks({
-  onDifficultySelect(difficulty) {
-    gameState.startNew(difficulty);
+  onDifficultySelect(difficulty, gridKey, inputMode, symbolSet) {
+    ui.showScreen('game');
+    gameState.startNew(difficulty, gridKey, inputMode, symbolSet);
     renderer._createBoard();
+    renderer._resize();
     renderer.updateBoard();
     ui.updateHUD();
-    ui.showScreen('game');
   },
 
   onNumPad(num) {
@@ -862,8 +895,9 @@ ui.registerCallbacks({
   },
 
   onPlayAgain() {
-    gameState.startNew(gameState.difficulty);
+    gameState.startNew(gameState.difficulty, gameState.gridKey, gameState.inputMode, gameState.symbolSet);
     renderer._createBoard();
+    renderer._resize();
     renderer.updateBoard();
     ui.updateHUD();
     ui.showScreen('game');
@@ -875,8 +909,9 @@ ui.registerCallbacks({
   },
 
   onTryAgain() {
-    gameState.startNew(gameState.difficulty);
+    gameState.startNew(gameState.difficulty, gameState.gridKey, gameState.inputMode, gameState.symbolSet);
     renderer._createBoard();
+    renderer._resize();
     renderer.updateBoard();
     ui.updateHUD();
     ui.showScreen('game');
@@ -895,6 +930,7 @@ if (!gameState.loadSaved()) {
   ui.showScreen('menu');
 } else {
   renderer._createBoard();
+  renderer._resize();
   renderer.updateBoard();
   ui.updateHUD();
   ui.showScreen('game');

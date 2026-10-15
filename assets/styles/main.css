@@ -86,6 +86,7 @@ body {
 
 /* ── Menu Screen ────────────────────────────────────────────────────── */
 #menu-screen {
+  overflow-y: auto;
   justify-content: center;
   background: rgba(10, 10, 30, 0.85);
   backdrop-filter: blur(8px);
@@ -125,10 +126,81 @@ body {
   margin-top: 4px;
 }
 
-/* Difficulty section */
+/* Grid size and difficulty selection */
+.grid-size-section,
 .difficulty-section {
   width: 100%;
   text-align: center;
+}
+.grid-size-section h2 {
+  font-size: 1.1rem;
+  color: var(--color-text-dim);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.grid-size-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.grid-btn {
+  padding: 10px 4px;
+  border: 2px solid var(--color-accent3);
+  border-radius: var(--radius-sm);
+  background: var(--color-card);
+  color: var(--color-text);
+  font-family: var(--font-fun);
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+.grid-btn.selected-grid {
+  background: rgba(78, 205, 196, 0.25);
+  box-shadow: 0 0 12px rgba(78, 205, 196, 0.4);
+}
+.grid-size-note {
+  margin-top: 6px;
+  color: var(--color-text-dim);
+  font-size: 0.7rem;
+}
+.input-mode-section {
+  width: 100%;
+  text-align: center;
+}
+.input-mode-section h2 {
+  margin-bottom: 8px;
+  color: var(--color-text-dim);
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.style-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.style-btn {
+  padding: 8px 6px;
+  border: 2px solid var(--color-accent3);
+  border-radius: var(--radius-sm);
+  background: var(--color-card);
+  color: var(--color-text);
+  font-family: var(--font-main);
+  font-size: 0.85rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+.style-btn:focus:not(:focus-visible) {
+  outline: none;
+}
+.style-btn:focus-visible {
+  outline: 3px solid var(--color-accent2);
+  outline-offset: 2px;
+}
+.style-btn.selected-style {
+  background: rgba(78, 205, 196, 0.25);
+  box-shadow: 0 0 10px rgba(78, 205, 196, 0.3);
 }
 .difficulty-section h2 {
   font-size: 1.1rem;
@@ -336,6 +408,25 @@ body {
   line-height: 1;
   position: relative;
 }
+.symbol-icon {
+  width: 1.4em;
+  height: 1.4em;
+  vertical-align: middle;
+}
+.symbol-shortcut {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  min-width: 1.1em;
+  padding: 2px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--color-accent2);
+  font-family: var(--font-main);
+  font-size: 0.6rem;
+  font-weight: bold;
+  line-height: 1;
+}
 .num-btn:hover, .num-btn:active {
   transform: scale(1.08);
   background: rgba(78, 205, 196, 0.25);
@@ -365,6 +456,9 @@ body {
 .hint-btn:hover {
   background: rgba(162, 155, 254, 0.2);
   border-color: var(--color-hint);
+}
+[hidden] {
+  display: none !important;
 }
 #hints-remaining {
   font-size: 0.75em;

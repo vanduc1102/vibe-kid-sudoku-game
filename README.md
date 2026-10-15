@@ -7,19 +7,21 @@ A fun, kid-friendly Sudoku game built with **Three.js** as a **Progressive Web A
 ## ✨ Features
 
 - 🎮 **Three.js 3D Board** – real 3D cells with canvas-texture numbers, particles, and animations
-- 🔢 **Three difficulty levels** – Easy (36 clues), Medium (27 clues), Hard (22 clues)
+- 🔢 **Four grid sizes** – 4×4, 5×5, 6×6, and 9×9 boards, each with three difficulty levels
+- 🧩 **Grid-specific rules** – 4×4 uses 2×2 boxes, 6×6 uses 3×2 boxes, 9×9 uses 3×3 boxes, and 5×5 uses row/column rules
+- ✨ **Symbol mode** – optional Lucide icon sets for 4×4 and 5×5: vegetables, vehicles, shapes, gaming, and math
 - 💡 **Hint system** – up to 3 hints per game with smart cell suggestion
 - ❤️ **Lives system** – 3 mistakes allowed; lose them all and it's game over
 - ⏱️ **Live timer** – tracks your solving speed
 - ⭐ **Score system** – based on difficulty, time, and mistakes
-- 🏆 **High scores** – persisted per difficulty in localStorage
+- 🏆 **High scores** – persisted per grid size and difficulty in localStorage
 - 🔊 **Sound effects** – synthesized with Web Audio API (no files needed)
 - 🎉 **Confetti win animation** – CSS-only particle celebration
 - 💾 **Auto-save** – resumes your game on next visit
 - 📱 **PWA / Offline** – service worker caches all assets after first load
 - 🌐 **Responsive** – works on phones, tablets, and desktops
 - ⌨️ **Full keyboard navigation** – move between cells with Arrow keys or WASD
-- 🔦 **Smart cell highlighting** – selected cell, same row/col/box, and matching digits are all highlighted
+- 🔦 **Smart cell highlighting** – selected cell, matching row/column/box (where applicable), and matching digits are highlighted
 
 ---
 
@@ -77,7 +79,11 @@ vibe-kid-sudoku-games/
 │   ├── main.js              ← Three.js renderer + app bootstrap
 │   ├── sudoku.js            ← Puzzle generation, solver, validator
 │   ├── game.js              ← Game state, timer, scoring, persistence
-│   ├── ui.js                ← DOM UI controller, screens, HUD, keyboard input
+│   ├── ui.js                ← UI coordinator and screen flow
+│   └── ui/
+│       ├── menu.js          ← Grid, style, difficulty, and high-score controls
+│       ├── game-hud.js      ← Timer, lives, score, and number/symbol pad
+│       └── keyboard.js      ← Keyboard entry and cell navigation
 │   └── sounds.js            ← Web Audio API sound effects
 ├── assets/
 │   └── styles/
@@ -89,7 +95,7 @@ vibe-kid-sudoku-games/
 
 ## 🎮 How to Play
 
-1. **Choose a difficulty** on the menu screen
+1. **Choose a grid size and difficulty** on the menu screen; 4×4 and 5×5 can also use the symbol mode
 2. **Click / tap a cell** on the board to select it (it glows gold and rises!)
 3. **Fill in a number** via the on-screen number pad, keyboard digits, or WASD/arrow navigation
 4. **Wrong answer?** You lose a heart ❤️ (3 mistakes = game over)
@@ -102,7 +108,7 @@ vibe-kid-sudoku-games/
 
 | Key | Action |
 |-----|--------|
-| `1` – `9` | Place number in selected cell |
+| `1` – `9` | Place number or matching symbol in selected cell |
 | `Backspace` / `Delete` / `0` | Erase selected cell |
 | `↑` `↓` `←` `→` | Move cell selection |
 | `W` `A` `S` `D` | Move cell selection (WASD) |
@@ -116,7 +122,7 @@ vibe-kid-sudoku-games/
 | Highlight | Meaning |
 |-----------|---------|
 | 🟡 **Gold** (bright) | Currently selected cell |
-| 🔵 **Light blue** | Same row, column, or 3×3 box as selection |
+| 🔵 **Light blue** | Same row, column, or box (where applicable) as selection |
 | 🟠 **Soft gold** | Other cells containing the same digit |
 | 🔴 **Red** | Wrong number placed |
 | 🟣 **Purple** | Cell filled by hint |
