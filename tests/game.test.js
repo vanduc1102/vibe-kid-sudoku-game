@@ -92,6 +92,15 @@ describe('GameState', () => {
       expect(game.selectCell(8, 8)).toBe(false);
       expect(game.selectedCell).toEqual(before);
     });
+
+    it('can select any cell within 9x9 grid', () => {
+      game.selectCell(4, 5);
+      expect(game.selectedCell).toEqual({ row: 4, col: 5 });
+      game.selectCell(8, 8);
+      expect(game.selectedCell).toEqual({ row: 8, col: 8 });
+      game.selectCell(0, 0);
+      expect(game.selectedCell).toEqual({ row: 0, col: 0 });
+    });
   });
 
   describe('placeNumber', () => {

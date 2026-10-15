@@ -437,19 +437,65 @@ class SudokuRenderer {
 
   /* ── Input handling ──────────────────────────────────────────────── */
 
-  _bindInput() {
-    // Mouse click
-    this.canvas.addEventListener('click', e => this._handlePointer(e));
+  _getCellTargets() {
+    const targets = [];
+    if (this.cellMeshes) {
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (this.cellMeshes[r]?.[c]) targets.push(this.cellMeshes[r][c]);
+          if (this.numberMeshes[r]?.[c]) targets.push(this.numberMeshes[r][c]);
+        }
+      }
+    }
+    return targets;
+  }
 
-    // Touch tap
+  _bindInput() {
+    let lastPointerDownTime = 0;
+
+    const onPointer = (e) => {
+      if (e.button !== undefined && e.button !== 0) return; // ignore right/middle clicks
+      lastPointerDownTime = Date.now();
+      this._handlePointer(e);
+    };
+
+    // Immediate cell focus on pointer down (mouse click, touch tap, pen)
+    this.canvas.addEventListener('pointerdown', onPointer);
+
+    // Click fallback (e.g. synthetic click or environments without PointerEvent)
+    this.canvas.addEventListener('click', e => {
+      if (Date.now() - lastPointerDownTime < 400) return;
+      onPointer(e);
+    });
+
+    // Touch tap fallback
     this.canvas.addEventListener('touchend', e => {
+      if (Date.now() - lastPointerDownTime < 400) return;
       e.preventDefault();
-      const t = e.changedTouches[0];
-      this._handlePointer(t);
+      const t = e.changedTouches?.[0] || e;
+      onPointer(t);
     }, { passive: false });
 
-    // Mouse move for hover
+    // Pointer move for hover effect
+    this.canvas.addEventListener('pointermove', e => this._handleHover(e));
     this.canvas.addEventListener('mousemove', e => this._handleHover(e));
+
+    // Also handle events that land directly on #game-screen (empty board area)
+    const gameScreen = document.getElementById('game-screen');
+    if (gameScreen) {
+      gameScreen.addEventListener('pointerdown', e => {
+        if (e.target === gameScreen) onPointer(e);
+      });
+      gameScreen.addEventListener('click', e => {
+        if (e.target === gameScreen) {
+          if (Date.now() - lastPointerDownTime < 400) return;
+          onPointer(e);
+        }
+      });
+      gameScreen.addEventListener('pointermove', e => {
+        if (e.target === gameScreen) this._handleHover(e);
+      });
+    }
   }
 
   _bindDeviceMotion() {
@@ -463,10 +509,12 @@ class SudokuRenderer {
 
   _pointerToNDC(e) {
     const rect = this.canvas.getBoundingClientRect();
-    const clientX = e.clientX !== undefined ? e.clientX : e.pageX;
-    const clientY = e.clientY !== undefined ? e.clientY : e.pageY;
-    this._mouse.x = ((clientX - rect.left) / rect.width)  * 2 - 1;
-    this._mouse.y = -((clientY - rect.top)  / rect.height) * 2 + 1;
+    const clientX = e.clientX !== undefined ? e.clientX : (e.pageX || 0);
+    const clientY = e.clientY !== undefined ? e.clientY : (e.pageY || 0);
+    const width = rect.width || window.innerWidth || 1;
+    const height = rect.height || window.innerHeight || 1;
+    this._mouse.x = ((clientX - rect.left) / width) * 2 - 1;
+    this._mouse.y = -((clientY - rect.top) / height) * 2 + 1;
   }
 
   _handlePointer(e) {
@@ -474,34 +522,49 @@ class SudokuRenderer {
         this.state.isComplete || this.state.isOver) return;
 
     this._pointerToNDC(e);
+    if (this.boardGroup) {
+      this.boardGroup.updateMatrixWorld(true);
+    }
+    this.camera.updateMatrixWorld();
     this._raycaster.setFromCamera(this._mouse, this.camera);
 
-    // Flatten cell meshes to array for raycasting
-    const targets = this.cellMeshes.flat().filter(Boolean);
-    const hits = this._raycaster.intersectObjects(targets);
+    const targets = this._getCellTargets();
+    const hits = this._raycaster.intersectObjects(targets, false);
     if (hits.length > 0) {
       const { row, col } = hits[0].object.userData;
-      this.sounds.playClick();
-      this.state.selectCell(row, col);
+      if (row !== undefined && col !== undefined) {
+        this.sounds.playClick();
+        this.state.selectCell(row, col);
+      }
     }
   }
 
   _handleHover(e) {
-    if (!this.state.puzzle) return;
+    if (!this.state.puzzle || this.state.isPaused ||
+        this.state.isComplete || this.state.isOver) {
+      this.canvas.style.cursor = 'default';
+      return;
+    }
     this._pointerToNDC(e);
+    if (this.boardGroup) {
+      this.boardGroup.updateMatrixWorld(true);
+    }
+    this.camera.updateMatrixWorld();
     this._raycaster.setFromCamera(this._mouse, this.camera);
-    const targets = this.cellMeshes.flat().filter(Boolean);
-    const hits = this._raycaster.intersectObjects(targets);
+    const targets = this._getCellTargets();
+    const hits = this._raycaster.intersectObjects(targets, false);
     if (hits.length > 0) {
       const { row, col } = hits[0].object.userData;
-      if (this._hoveredCell.row !== row || this._hoveredCell.col !== col) {
-        this._hoveredCell = { row, col };
-        this.canvas.style.cursor = 'pointer';
+      if (row !== undefined && col !== undefined) {
+        if (this._hoveredCell.row !== row || this._hoveredCell.col !== col) {
+          this._hoveredCell = { row, col };
+          this.canvas.style.cursor = 'pointer';
+        }
+        return;
       }
-    } else {
-      this._hoveredCell = { row: -1, col: -1 };
-      this.canvas.style.cursor = 'default';
     }
+    this._hoveredCell = { row: -1, col: -1 };
+    this.canvas.style.cursor = 'default';
   }
 
   /* ── Animation loop ──────────────────────────────────────────────── */
@@ -544,12 +607,19 @@ class SudokuRenderer {
         this.boardGroup.position.y = Math.sin(wt * 2) * 0.5;
       }
 
-      // Selected cell pulse
-      const { row, col } = this.state.selectedCell;
-      if (row >= 0 && col >= 0 && this.cellMeshes[row]?.[col]) {
-        const cell = this.cellMeshes[row][col];
-        const pulse = 1 + 0.04 * Math.sin(elapsed * 6);
-        cell.scale.set(pulse, 1, pulse);
+      // Selected cell pulse & unselected scale reset
+      const { row: selR, col: selC } = this.state.selectedCell;
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          const cell = this.cellMeshes[r]?.[c];
+          if (!cell) continue;
+          if (r === selR && c === selC) {
+            const pulse = 1 + 0.04 * Math.sin(elapsed * 6);
+            cell.scale.set(pulse, 1, pulse);
+          } else if (cell.scale.x !== 1) {
+            cell.scale.set(1, 1, 1);
+          }
+        }
       }
 
       // Smooth cell Y movement

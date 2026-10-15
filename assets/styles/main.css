@@ -235,6 +235,14 @@ body {
 #game-screen {
   justify-content: space-between;
   background: transparent;
+  pointer-events: none;
+}
+#game-screen.active {
+  pointer-events: none;
+}
+#game-screen .hud,
+#game-screen .numpad {
+  pointer-events: auto;
 }
 
 /* HUD */
