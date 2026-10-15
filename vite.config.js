@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'));
 
@@ -14,6 +14,21 @@ export default defineConfig({
   },
 
   plugins: [
+    {
+      // Make start_url, scope and icon paths absolute under the deploy base (e.g. /repo/ on GitHub Pages)
+      name: 'manifest-base-paths',
+      apply: 'build',
+      closeBundle() {
+        const file = new URL('./dist/manifest.json', import.meta.url);
+        const manifest = JSON.parse(readFileSync(file, 'utf-8'));
+        const withBase = (p) => base + p.replace(/^\.?\//, '');
+        manifest.id = base;
+        manifest.start_url = base;
+        manifest.scope = base;
+        manifest.icons = manifest.icons.map((icon) => ({ ...icon, src: withBase(icon.src) }));
+        writeFileSync(file, JSON.stringify(manifest, null, 2));
+      },
+    },
     {
       name: 'html-version-transform',
       transformIndexHtml(html) {
