@@ -14,9 +14,6 @@ export class GameHUD {
   update() {
     if (!this.state.puzzle) return;
     this.timerDisplay.textContent = this.state.getTimerString();
-    const remaining = 3 - this.state.mistakes;
-    this.heartsDisplay.textContent = '❤️'.repeat(Math.max(0, remaining)) +
-      '🖤'.repeat(Math.min(3, this.state.mistakes));
     this.scoreDisplay.textContent = this.state.score;
     this.hintsRemaining.textContent = this.state.hints;
 

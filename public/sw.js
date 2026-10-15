@@ -8,26 +8,18 @@ const CACHE_NAME = 'kid-sudoku-v1';
 
 const ASSETS_TO_CACHE = [
   './',
-  './index.html',
   './manifest.json',
-  './src/main.js',
-  './src/sudoku.js',
-  './src/game.js',
-  './src/ui.js',
-  './src/sounds.js',
-  './assets/styles/main.css',
-  './assets/icons/icon.svg',
-  'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'
+  './icons/icon.svg',
+  './icons/icon-192.png',
+  './icons/icon-512.png'
 ];
 
-// ── Install: pre-cache all assets ──────────────────────────────────────
+// ── Install: pre-cache app shell (failures must not block installation) ─
 self.addEventListener('install', event => {
-  console.log('[SW] Installing Kid Sudoku v1…');
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      console.log('[SW] Caching app shell');
-      return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME)
+      .then(cache => Promise.all(ASSETS_TO_CACHE.map(url => cache.add(url).catch(() => {}))))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -82,8 +74,8 @@ self.addEventListener('fetch', event => {
         return networkResponse;
       }).catch(() => {
         // Offline fallback for HTML pages
-        if (event.request.headers.get('accept').includes('text/html')) {
-          return caches.match('./index.html');
+        if ((event.request.headers.get('accept') || '').includes('text/html')) {
+          return caches.match('./');
         }
       });
     })
@@ -104,8 +96,8 @@ self.addEventListener('push', event => {
   const title = data.title || 'Kid Sudoku';
   const options = {
     body: data.body || 'Come back and play! 🎮',
-    icon: './assets/icons/icon.svg',
-    badge: './assets/icons/icon.svg'
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-192.png'
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });

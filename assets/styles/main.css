@@ -36,8 +36,8 @@ html, body {
   --radius-md:       16px;
   --radius-lg:       24px;
   --shadow:          0 8px 32px rgba(0,0,0,0.5);
-  --font-main:       'Segoe UI', 'Helvetica Neue', sans-serif;
-  --font-fun:        'Comic Sans MS', 'Chalkboard SE', cursive;
+  --font-main:       'Nunito Variable', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-fun:        'Nunito Variable', Roboto, 'Arial Rounded MT Bold', sans-serif;
 }
 
 /* ── Base body ──────────────────────────────────────────────────────── */

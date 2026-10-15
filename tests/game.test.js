@@ -145,18 +145,13 @@ describe('GameState', () => {
       expect(game.placeNumber(1)).toBe('clue');
     });
 
-    it('ends the game after three mistakes', () => {
+    it('lets the player keep trying after many mistakes', () => {
       const [{ row, col }] = emptyCells(game);
       game.selectCell(row, col);
-      const onGameOver = vi.fn();
-      game.onGameOver = onGameOver;
       const bad = wrongValue(game, row, col);
-      expect(game.placeNumber(bad)).toBe('wrong');
-      expect(game.placeNumber(bad)).toBe('wrong');
-      expect(game.placeNumber(bad)).toBe('gameover');
-      expect(game.isOver).toBe(true);
-      expect(onGameOver).toHaveBeenCalled();
-      expect(game.placeNumber(1)).toBe('inactive');
+      for (let i = 0; i < 5; i++) expect(game.placeNumber(bad)).toBe('wrong');
+      expect(game.isOver).toBe(false);
+      expect(game.mistakes).toBe(5);
     });
 
     it('wins when the last cell is filled correctly and saves high score', () => {
