@@ -117,8 +117,9 @@ class SudokuRenderer {
     const h = window.innerHeight;
     this.renderer.setSize(w, h);
 
-    const boardW = this.state.gridConfig.size * (CELL_SIZE + CELL_GAP) + 0.5;
-    const extent = boardW + 1;
+    // Board base width (cells + 0.4 border) plus a small margin so it fills the screen width
+    const boardW = this.state.gridConfig.size * (CELL_SIZE + CELL_GAP) + 0.4;
+    const extent = boardW + 0.15;
 
     // Fit the board into the space between the HUD and the number pad
     const { key, freeTop, freeBottom } = this._measureLayout();
