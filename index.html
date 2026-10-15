@@ -28,23 +28,46 @@
         <p class="logo-sub">Think. Play. Win! 🌟 <span class="version-badge">v<span class="app-version">%APP_VERSION%</span></span></p>
       </div>
 
+      <div class="grid-size-section">
+        <h2>Choose Grid</h2>
+        <div class="grid-size-buttons">
+          <button class="grid-btn" data-grid="small" aria-pressed="false">4×4</button>
+          <button class="grid-btn" data-grid="medium_m" aria-pressed="false">5×5</button>
+          <button class="grid-btn" data-grid="medium_s" aria-pressed="false">6×6</button>
+          <button class="grid-btn selected-grid" data-grid="large" aria-pressed="true">9×9</button>
+        </div>
+        <p class="grid-size-note">5×5 uses row and column rules without subgrids.</p>
+      </div>
+
+      <div id="input-mode-section" class="input-mode-section" hidden>
+        <h2>Choose Style</h2>
+        <div class="style-buttons">
+          <button class="style-btn selected-style" data-style="numbers" aria-pressed="true">🔢 Numbers</button>
+          <button class="style-btn" data-style="vegetables" aria-pressed="false">🥕 Vegetables</button>
+          <button class="style-btn" data-style="vehicles" aria-pressed="false">🚗 Vehicles</button>
+          <button class="style-btn" data-style="shapes" aria-pressed="false">🔷 Shapes</button>
+          <button class="style-btn" data-style="gaming" aria-pressed="false">🎮 Gaming</button>
+          <button class="style-btn" data-style="math" aria-pressed="false">➗ Math</button>
+        </div>
+      </div>
+
       <div class="difficulty-section">
         <h2>Choose Difficulty</h2>
         <div class="difficulty-buttons">
           <button class="diff-btn easy-btn" data-difficulty="easy">
             <span class="diff-emoji">😊</span>
             <span class="diff-label">Easy</span>
-            <span class="diff-desc">36 clues</span>
+            <span class="diff-desc">45 clues</span>
           </button>
           <button class="diff-btn medium-btn selected-diff" data-difficulty="medium">
             <span class="diff-emoji">🤔</span>
             <span class="diff-label">Medium</span>
-            <span class="diff-desc">27 clues</span>
+            <span class="diff-desc">34 clues</span>
           </button>
           <button class="diff-btn hard-btn" data-difficulty="hard">
             <span class="diff-emoji">🔥</span>
             <span class="diff-label">Hard</span>
-            <span class="diff-desc">22 clues</span>
+            <span class="diff-desc">26 clues</span>
           </button>
         </div>
         <button id="btn-start" class="start-btn">▶ Start Game</button>
@@ -58,7 +81,7 @@
       </div>
 
       <div class="highscores-section">
-        <h2>🏆 High Scores</h2>
+        <h2 id="highscores-title">🏆 High Scores · 9×9 · Numbers</h2>
         <div id="highscores-list" class="highscores-list">
           <div class="score-row"><span class="score-diff">Easy</span><span id="hs-easy" class="score-val">—</span></div>
           <div class="score-row"><span class="score-diff">Medium</span><span id="hs-medium" class="score-val">—</span></div>

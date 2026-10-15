@@ -1,104 +1,80 @@
 /* =====================================================================
    Kid Sudoku – Sudoku Logic Module
-   Handles puzzle generation, validation, and solving
+   Handles puzzle generation, validation, and solving (multi-grid)
    ===================================================================== */
 
 'use strict';
 
-/**
- * Check if placing `num` at (row, col) on `board` is valid.
- * @param {number[][]} board - 9x9 array (0 = empty)
- * @param {number} row
- * @param {number} col
- * @param {number} num - 1-9
- * @returns {boolean}
- */
-export function isValid(board, row, col, num) {
-  // Check row
-  for (let c = 0; c < 9; c++) {
-    if (board[row][c] === num) return false;
+export const GRID_SIZES = {
+  small:    { size: 4, boxRows: 2, colsPerCol: 2, maxNum: 4 },
+  medium_m: { size: 5, boxRows: 0, colsPerCol: 0, maxNum: 5 },
+  medium_s: { size: 6, boxRows: 3, colsPerCol: 2, maxNum: 6 },
+  large:    { size: 9, boxRows: 3, colsPerCol: 3, maxNum: 9 },
+};
+
+export function getGridConfig(key) {
+  return GRID_SIZES[key] || GRID_SIZES.large;
+}
+
+function createBoard(s) { return Array.from({ length: s }, () => Array(s).fill(0)); }
+function cloneBoard(b)  { return b.map(r => [...r]); }
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  // Check column
-  for (let r = 0; r < 9; r++) {
-    if (board[r][col] === num) return false;
-  }
-  // Check 3x3 box
-  const boxRow = Math.floor(row / 3) * 3;
-  const boxCol = Math.floor(col / 3) * 3;
-  for (let r = boxRow; r < boxRow + 3; r++) {
-    for (let c = boxCol; c < boxCol + 3; c++) {
-      if (board[r][c] === num) return false;
+  return a;
+}
+
+function isValid(board, row, col, num, gc) {
+  const s = gc.size;
+  for (let c = 0; c < s; c++) if (board[row][c] === num) return false;
+  for (let r = 0; r < s; r++) if (board[r][col] === num) return false;
+  if (gc.boxRows && gc.colsPerCol) {
+    const bx = Math.floor(row / gc.boxRows) * gc.boxRows;
+    const by = Math.floor(col / gc.colsPerCol) * gc.colsPerCol;
+    for (let r = bx; r < bx + gc.boxRows; r++) {
+      for (let c = by; c < by + gc.colsPerCol; c++) {
+        if (board[r][c] === num) return false;
+      }
     }
   }
   return true;
 }
 
-/**
- * Deep-clone a 9x9 board.
- * @param {number[][]} board
- * @returns {number[][]}
- */
-function cloneBoard(board) {
-  return board.map(row => [...row]);
-}
-
-/**
- * Shuffle array in-place (Fisher-Yates).
- * @param {any[]} arr
- */
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-/**
- * Backtracking Sudoku solver.
- * @param {number[][]} board - modified in place
- * @param {boolean} randomize - shuffle number order for puzzle generation
- * @returns {boolean} - true if solved
- */
-export function solveSudoku(board, randomize = false) {
-  for (let r = 0; r < 9; r++) {
-    for (let c = 0; c < 9; c++) {
+export function solveSudoku(board, randomize = false, gc = GRID_SIZES.large) {
+  const s = gc.size;
+  for (let r = 0; r < s; r++) {
+    for (let c = 0; c < s; c++) {
       if (board[r][c] === 0) {
         const nums = randomize
-          ? shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9])
-          : [1, 2, 3, 4, 5, 6, 7, 8, 9];
-
+          ? shuffle(Array.from({ length: s }, (_, i) => i + 1))
+          : Array.from({ length: s }, (_, i) => i + 1);
         for (const num of nums) {
-          if (isValid(board, r, c, num)) {
+          if (isValid(board, r, c, num, gc)) {
             board[r][c] = num;
-            if (solveSudoku(board, randomize)) return true;
+            if (solveSudoku(board, randomize, gc)) return true;
             board[r][c] = 0;
           }
         }
-        return false; // trigger backtrack
+        return false;
       }
     }
   }
-  return true; // all cells filled
+  return true;
 }
 
-/**
- * Count solutions (up to `limit`) to check uniqueness.
- * @param {number[][]} board
- * @param {number} limit
- * @returns {number}
- */
-function countSolutions(board, limit = 2) {
+function countSolutions(board, limit, gc) {
+  const s = gc.size;
   let count = 0;
-
-  function solve(b) {
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
+  function sol(b) {
+    for (let r = 0; r < s; r++) {
+      for (let c = 0; c < s; c++) {
         if (b[r][c] === 0) {
-          for (let num = 1; num <= 9; num++) {
-            if (isValid(b, r, c, num)) {
+          for (let num = 1; num <= s; num++) {
+            if (isValid(b, r, c, num, gc)) {
               b[r][c] = num;
-              solve(b);
+              sol(b);
               if (count >= limit) return;
               b[r][c] = 0;
             }
@@ -109,112 +85,77 @@ function countSolutions(board, limit = 2) {
     }
     count++;
   }
-
-  solve(cloneBoard(board));
+  sol(cloneBoard(board));
   return count;
 }
 
-/**
- * Generate a complete valid Sudoku solution.
- * @returns {number[][]}
- */
-function generateFullBoard() {
-  const board = Array.from({ length: 9 }, () => Array(9).fill(0));
-  solveSudoku(board, true);
-  return board;
+function genFull(gc) {
+  const b = createBoard(gc.size);
+  solveSudoku(b, true, gc);
+  return b;
 }
 
-/**
- * Generate a Sudoku puzzle with a unique solution.
- * @param {'easy'|'medium'|'hard'} difficulty
- * @returns {{ puzzle: number[][], solution: number[][] }}
- */
-export function generatePuzzle(difficulty = 'medium') {
-  const clueCount = {
-    easy:   36,
-    medium: 27,
-    hard:   22
-  }[difficulty] || 27;
+export function getClueCount(diff, size) {
+  const pct = { easy: 0.45, medium: 0.58, hard: 0.68 };
+  return (size * size) - Math.round(size * size * (pct[diff] || 0.55));
+}
 
-  // Generate full solution
-  const solution = generateFullBoard();
-  const puzzle   = cloneBoard(solution);
-
-  // Build list of all cell positions and shuffle
+export function generatePuzzle(diff, gridKey = 'large') {
+  const gc = getGridConfig(gridKey);
+  const s = gc.size;
+  const clueCount = getClueCount(diff, s);
+  const solution = genFull(gc);
+  const puzzle = cloneBoard(solution);
   const positions = [];
-  for (let r = 0; r < 9; r++) {
-    for (let c = 0; c < 9; c++) {
+  for (let r = 0; r < s; r++) {
+    for (let c = 0; c < s; c++) {
       positions.push([r, c]);
     }
   }
   shuffle(positions);
-
-  // Remove cells while maintaining unique solution and clue count
   let removed = 0;
-  const target = 81 - clueCount;
-
+  const tgt = (s * s) - clueCount;
   for (const [r, c] of positions) {
-    if (removed >= target) break;
-
-    const backup = puzzle[r][c];
+    if (removed >= tgt) break;
+    const bk = puzzle[r][c];
     puzzle[r][c] = 0;
-
-    // Only remove if puzzle still has unique solution
-    if (countSolutions(puzzle, 2) !== 1) {
-      puzzle[r][c] = backup; // restore
+    if (countSolutions(puzzle, 2, gc) !== 1) {
+      puzzle[r][c] = bk;
     } else {
       removed++;
     }
   }
-
-  return { puzzle, solution };
+  return { puzzle, solution, gridKey };
 }
 
-/**
- * Check if the user's filled puzzle matches the solution.
- * @param {number[][]} userGrid
- * @param {number[][]} solution
- * @returns {boolean}
- */
-export function checkComplete(userGrid, solution) {
-  for (let r = 0; r < 9; r++) {
-    for (let c = 0; c < 9; c++) {
-      if (userGrid[r][c] !== solution[r][c]) return false;
+export function checkComplete(uGrid, sol, gc = GRID_SIZES.large) {
+  const s = gc.size;
+  for (let r = 0; r < s; r++) {
+    for (let c = 0; c < s; c++) {
+      if (uGrid[r][c] !== sol[r][c]) return false;
     }
   }
   return true;
 }
 
-/**
- * Return a hint: one empty (or wrong) cell to fill.
- * Prioritises cells with the fewest valid candidates (naked singles).
- * @param {number[][]} userGrid
- * @param {number[][]} solution
- * @returns {{ row: number, col: number, value: number } | null}
- */
-export function getHint(userGrid, solution) {
-  // Collect all unfilled / wrong cells
-  const candidates = [];
-
-  for (let r = 0; r < 9; r++) {
-    for (let c = 0; c < 9; c++) {
-      if (userGrid[r][c] !== solution[r][c]) {
-        // Count valid placements for this cell in userGrid
-        const board = cloneBoard(userGrid);
-        board[r][c] = 0;
-        let validCount = 0;
-        for (let n = 1; n <= 9; n++) {
-          if (isValid(board, r, c, n)) validCount++;
+export function getHint(uGrid, sol, gc = GRID_SIZES.large) {
+  const s = gc.size;
+  const cands = [];
+  for (let r = 0; r < s; r++) {
+    for (let c = 0; c < s; c++) {
+      if (uGrid[r][c] !== sol[r][c]) {
+        const b = cloneBoard(uGrid);
+        b[r][c] = 0;
+        let vc = 0;
+        for (let n = 1; n <= s; n++) {
+          if (isValid(b, r, c, n, gc)) vc++;
         }
-        candidates.push({ row: r, col: c, value: solution[r][c], validCount });
+        cands.push({ row: r, col: c, val: sol[r][c], vc });
       }
     }
   }
-
-  if (candidates.length === 0) return null;
-
-  // Sort by fewest candidates (easiest cell to deduce)
-  candidates.sort((a, b) => a.validCount - b.validCount);
-  const hint = candidates[0];
-  return { row: hint.row, col: hint.col, value: hint.value };
+  if (!cands.length) return null;
+  cands.sort((a, b) => a.vc - b.vc);
+  const h = cands[0];
+  return { row: h.row, col: h.col, value: h.val };
 }
